@@ -1,0 +1,89 @@
+AE INDEX Prediction (1995 to 2018
+Date: 2024-07-04--20-31-14
+Length of time 0:58:01.208102
+Model file name: /home/yerko/Desktop/processing_data/model/Model_ANN_AE_INDEX_2024-07-04--20-31-14_Epoch_100.pt
+OMNI Parameters:   B Total
+  BY GSM
+  BZ GSM
+  Vx
+  Vy
+  Vz
+  proton density
+  T
+  Pressure
+  E Field
+  flow speed
+
+-----------[ Hyperparameters ]-----------
+
+Model Name: ANN
+Scaler: RobustTraining Set Length (%): 60.0%
+Validation Set Length (%): 20.0%
+Test Set Length (%): 20.0%
+Epoch: 100
+Learning Rate: 1e-05
+Criterion: RMSELoss
+Optimizer: Adam
+
+-----------[ Model Parameters ]-----------
+
+ 1 --> ANN(
+  (drop1): Dropout(p=0.2, inplace=False)
+  (drop2): Dropout(p=0.2, inplace=False)
+  (drop3): Dropout(p=0.2, inplace=False)
+  (relu1): ReLU()
+  (relu2): ReLU()
+  (relu3): ReLU()
+  (relu4): ReLU()
+  (fc1): Linear(in_features=44, out_features=320, bias=True)
+  (fc2): Linear(in_features=320, out_features=160, bias=True)
+  (fc3): Linear(in_features=160, out_features=160, bias=True)
+  (fc4): Linear(in_features=160, out_features=80, bias=True)
+  (fc5): Linear(in_features=80, out_features=20, bias=True)
+  (fc6): Linear(in_features=20, out_features=5, bias=True)
+  (fc7): Linear(in_features=5, out_features=1, bias=True)
+) 
+ 2 --> Dropout(p=0.2, inplace=False) 
+ 3 --> Dropout(p=0.2, inplace=False) 
+ 4 --> Dropout(p=0.2, inplace=False) 
+ 5 --> ReLU() 
+ 6 --> ReLU() 
+ 7 --> ReLU() 
+ 8 --> ReLU() 
+ 9 --> Linear(in_features=44, out_features=320, bias=True) 
+ 10 --> Linear(in_features=320, out_features=160, bias=True) 
+ 11 --> Linear(in_features=160, out_features=160, bias=True) 
+ 12 --> Linear(in_features=160, out_features=80, bias=True) 
+ 13 --> Linear(in_features=80, out_features=20, bias=True) 
+ 14 --> Linear(in_features=20, out_features=5, bias=True) 
+ 15 --> Linear(in_features=5, out_features=1, bias=True) 
+
+-----------[ Loss, Accuracy and R2 Score ]-----------
+
+Train Loss/Accuracy:
+  Epoch: 10   |   Loss: 225.7501   |   Accuracy: 0.0028   |   R2 Score: -0.0588
+  Epoch: 20   |   Loss: 158.1544   |   Accuracy: 0.0044   |   R2 Score: 0.4806
+  Epoch: 30   |   Loss: 156.2391   |   Accuracy: 0.0044   |   R2 Score: 0.4930
+  Epoch: 40   |   Loss: 155.7133   |   Accuracy: 0.0045   |   R2 Score: 0.4964
+  Epoch: 50   |   Loss: 155.4119   |   Accuracy: 0.0045   |   R2 Score: 0.4983
+  Epoch: 60   |   Loss: 155.0988   |   Accuracy: 0.0045   |   R2 Score: 0.5004
+  Epoch: 70   |   Loss: 154.8180   |   Accuracy: 0.0045   |   R2 Score: 0.5022
+  Epoch: 80   |   Loss: 154.6872   |   Accuracy: 0.0045   |   R2 Score: 0.5031
+  Epoch: 90   |   Loss: 154.5878   |   Accuracy: 0.0044   |   R2 Score: 0.5037
+  Epoch: 100   |   Loss: 154.4957   |   Accuracy: 0.0045   |   R2 Score: 0.5043
+-----------------------------------------
+Valid Loss/Accuracy:
+  Epoch: 10  |   Loss: 136.1800  |   Accuracy: 0.0093   |   R2 Score: 0.3940
+  Epoch: 20  |   Loss: 119.7089  |   Accuracy: 0.0058   |   R2 Score: 0.5317
+  Epoch: 30  |   Loss: 118.2311  |   Accuracy: 0.0056   |   R2 Score: 0.5432
+  Epoch: 40  |   Loss: 117.7418  |   Accuracy: 0.0058   |   R2 Score: 0.5470
+  Epoch: 50  |   Loss: 117.7390  |   Accuracy: 0.0059   |   R2 Score: 0.5470
+  Epoch: 60  |   Loss: 117.1792  |   Accuracy: 0.0061   |   R2 Score: 0.5513
+  Epoch: 70  |   Loss: 117.2659  |   Accuracy: 0.0060   |   R2 Score: 0.5506
+  Epoch: 80  |   Loss: 117.2782  |   Accuracy: 0.0059   |   R2 Score: 0.5505
+  Epoch: 90  |   Loss: 117.1109  |   Accuracy: 0.0059   |   R2 Score: 0.5518
+  Epoch: 100  |   Loss: 117.0532  |   Accuracy: 0.0058   |   R2 Score: 0.5523
+-----------------------------------------
+Test Loss/Accuracy:
+Loss: 146.2422   |   Accuracy: 0.0050   |   R2 Score: 0.4684
+
