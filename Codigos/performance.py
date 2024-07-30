@@ -1,5 +1,3 @@
-import os
-import time
 import numpy as np
 import pandas as pd
 
@@ -9,14 +7,8 @@ from torch.utils.data import Dataset, DataLoader
 
 from sklearn.preprocessing import RobustScaler
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import TimeSeriesSplit
-
-device =(
-    "cuda"
-    if torch.cuda.is_available()
-    else "cpu"
-)
-
+from sklearn.model_selection import TimeSeriesSplit, train_test_split
+from sklearn.metrics import accuracy_score, r2_score
 
 ###### [ Scaler ] ######
 def scaler_df(df, scaler, omni_param, auroral_param):
@@ -31,16 +23,17 @@ def scaler_df(df, scaler, omni_param, auroral_param):
     df_auroral = pd.DataFrame(df[auroral_param], columns=auroral_param)
 
     # 1.- Choose the type of scaler to be used (RobustScaler or StandardScaler)
-    if scaler == 'robust':
-        scaler = RobustScaler()
-    if scaler == 'standard':
-        scaler = StandardScaler()
+    match scaler:
+        case 'robust':
+            scaler = RobustScaler()
+        case 'standard':
+            scaler = StandardScaler()
 
     # 2.- Perform scaling
     df_omni = scaler.fit_transform(df_omni)
-    df_omni = pd.DataFrame(df_omni, columns=omni_param)   
+    df_omni = pd.DataFrame(df_omni, columns=omni_param)
 
-    # 3.- Join the dataframes to obtain a single one
+     # 3.- Join the dataframes to obtain a single one
     df_omni.set_index(df_epoch.index, inplace=True)
     df_auroral.set_index(df_epoch.index, inplace=True)
 
@@ -49,120 +42,93 @@ def scaler_df(df, scaler, omni_param, auroral_param):
     return df_combined
 
 
-
 ###### [ Train/Val/Test set ] ######
-def create_group_prediction(df, omni_param, auroral_param, group, storm_list, n_split_train_val_test, n_split_train_val, processing_file):
+def create_set_prediction(df, omni_param, auroral_param, set_split, n_split_train_val_test, n_split_train_val, test_size, val_size, processing_file):
     """
-    This function creates the Train/Val/Test group for the prediction. To do this, you can choose two options, make a random selection or use the classification given by the storm_list.csv file.
-        1.- If storm_list=True, the storm_list.csv file is read and a dataframe is generated.
-        2.- Change the format of the temporary columns of this dataframe and the parameters to study and create a classification according to the group you want to create (train/value/proof)
-        3.- Make a loop with the dates of the previous classification and generate a new dataframe concatenating the results
-        4.- Obtain the % of data of each group created
-        5.- If random=False, perform the division with percentages given by n_split of the TimeSeriesSplit function (First the division of train_val and test set will be obtained,    and then train and val set will be obtained)
+    This function creates the Train/Val/Test set for the prediction. To do this, you can choose tree options, use a organized selection given for TimeSerieSplit(), use random selection given for train_test_split() or use the classification given by the storm_list.csv file.
     """
-    # 1.- If random=True, the storm_list.csv file is read and a dataframe is generated
-    if storm_list:
-        file = processing_file + 'storm_list.csv'
-        df_storm = pd.read_csv(file, sep=";")
+    match set_split:
 
-        # 2.- Change the format of the temporary columns of this dataframe and the parameters to study and create a classification according to the group you want to create (train/value/proof)   
-        df_storm['start_date'] = pd.to_datetime(df_storm['start_date'], format='%Y-%m-%d')
-        df_storm['end_date'] = pd.to_datetime(df_storm['end_date'], format='%Y-%m-%d')
+        case "organized":
+            tscv1 = TimeSeriesSplit(n_splits=n_split_train_val_test)
+            tscv2 = TimeSeriesSplit(n_splits=n_split_train_val)
 
-        df_storm_group = df_storm[df_storm['pred'] == group]
-        df['Epoch'] = pd.to_datetime(df['Epoch'])
-
-        # 3.- Make a loop with the dates of the previous classification and generate a new dataframe concatenating the results
-        df_group_list = []
-        for start, end in zip(df_storm_group['start_date'], df_storm_group['end_date']):
-            temporal_df = df.loc[(df['Epoch'] >= start) & (df['Epoch'] <= end)].copy()
-            df_group_list.append(temporal_df)
-
-        df_group = pd.concat(df_group_list, axis=0, ignore_index=True)
-
-        return df_group
-
-    # 5.- If random=False, perform the division with percentages given by n_split of the TimeSeriesSplit function (First the division of train_val and test set will be obtained,    and then train and val set will be obtained)
-    else:
-        x = df[omni_param]
-        y = df[auroral_param]
-        date = df['Epoch']
-
-        tscv1 = TimeSeriesSplit(n_splits=n_split_train_val_test)
-        tscv2 = TimeSeriesSplit(n_splits=n_split_train_val)
-
-        for train_val, test in tscv1.split(x):
-            train_val_x, test_x = x.iloc[train_val], x.iloc[test]
-            train_val_y, test_y = y.iloc[train_val], y.iloc[test]
-            train_val_date, test_date = date.iloc[train_val], date.iloc[test]
-        
-        for train, val in tscv2.split(train_val_x):
-            train_x, val_x = train_val_x.iloc[train], train_val_x.iloc[val]
-            train_y, val_y = train_val_y.iloc[train], train_val_y.iloc[val]
-            train_date, val_date = train_val_date.iloc[train], train_val_date.iloc[val]
+            for train_val, test in tscv1.split(df):
+                train_val_df, test_df = df.iloc[train_val], df.iloc[test]
             
-        train_df = pd.concat([train_date, train_x, train_y], axis=1)
-        val_df = pd.concat([val_date, val_x, val_y], axis=1)
-        test_df = pd.concat([test_date, test_x, test_y], axis=1)
+            for train, val in tscv2.split(train_val_df):
+                train_df, val_df = train_val_df.iloc[train], train_val_df.iloc[val]
 
-        return train_df, val_df, test_df
+            return train_df, val_df, test_df
+
+        case "random":
+            train_val_df, test_df = train_test_split(df, test_size=test_size, shuffle=True)
+            train_df, val_df = train_test_split(train_val_df, test_size=val_size, shuffle=True)
+
+            return train_df, val_df, test_df
+        
+        case "list":
+            file = processing_file + 'storm_list.csv'
+            df_storm = pd.read_csv(file, sep=";")
+
+            df_storm['start_date'] = pd.to_datetime(df_storm['start_date'], format='%Y-%m-%d') + pd.to_timedelta('00:00:00')
+            df_storm['end_date'] = pd.to_datetime(df_storm['end_date'], format='%Y-%m-%d') + pd.to_timedelta('23:59:00')
+            df_storm_train = df_storm[df_storm['pred'] == 'train']
+            df_storm_val = df_storm[df_storm['pred'] == 'val']
+            df_storm_test = df_storm[df_storm['pred'] == 'test']
+
+            df['Epoch'] = pd.to_datetime(df['Epoch'])
+
+            df_train_list = []
+            df_val_list = []
+            df_test_list = []
+            for start, end in zip(df_storm_train['start_date'], df_storm_train['end_date']):
+                temporal_df = df.loc[(df['Epoch'] >= start) & (df['Epoch'] <= end)].copy()
+                df_train_list.append(temporal_df)
+            train_df = pd.concat(df_train_list, axis=0, ignore_index=True)
+
+            for start, end in zip(df_storm_val['start_date'], df_storm_val['end_date']):
+                temporal_df = df.loc[(df['Epoch'] >= start) & (df['Epoch'] <= end)].copy()
+                df_val_list.append(temporal_df)
+            val_df = pd.concat(df_val_list, axis=0, ignore_index=True)
+
+            for start, end in zip(df_storm_test['start_date'], df_storm_test['end_date']):
+                temporal_df = df.loc[(df['Epoch'] >= start) & (df['Epoch'] <= end)].copy()
+                df_test_list.append(temporal_df)
+            test_df = pd.concat(df_test_list, axis=0, ignore_index=True)
+
+            return train_df, val_df, test_df
 
 
 ###### [ Shift ] ######
-
-####### 1-Dimension #######
-def shifty_1d(df, omni_param, auroral_index, shifty):
-    """ 
-    This code creates a delay of the form X[t-m, n], where t is the delay and m,n are the original dimensions 
-        1.- The columns are identified and a cycle is performed in the delay range
-        2.- A series is created in Pandas that stores the delays generated by the 'shift' command
+def shifty(df, omni_param, auroral_index, shift_length, type_model):
     """
+    This code creates a data delay for the neural networks. If it is an ANN it will be [m, n-t]. If it is a recurrent network it will be [m, [t,n]]
+    """
+
     df_omni = df[omni_param].copy()
     df_index = df[auroral_index].copy()
-    
-    # 1.- The columns are identified and a cycle is performed in the delay range
-    for cols in df_omni.columns:
-        for lag in range(1, shifty + 1):
-            # 2.- A series is created in Pandas that stores the delays generated by the 'shift' command
-            df_omni[f'{cols}_{lag}'] = df_omni[cols].shift(lag).astype('float32')
+    np_index = df_index.to_numpy()
 
-    # Remove rows with NaN values that were created due to the shift
-    df_omni = df_omni.dropna()
+    if type_model == 'ANN':
+        for cols in df_omni.columns:
+            for lag in range(1, shift_length + 1):
+                df_omni[f'{cols}_{lag}'] = df_omni[cols].shift(lag).astype('float32')
+                df_omni[f'{cols}_{lag}'].fillna(0, inplace=True)
 
-    # Align the auroral index data to match the delayed omni data
-    df_index = df_index.loc[df_omni.index]
+        np_omni = df_omni.values
 
-    return df_omni.values, df_index.values
-
-####### 3-Dimension #######
-def shifty_3d(df, omni_param, auroral_index, shifty):
-    """
-    This function creates sequences of the form X[[t-m], n], where t is the delay and m,n are the original dimensions
-        1.- Extract necessary columns as separate numpy arrays
-        2.- Extract the omni_param columns and create sequences
-        3.- The cycle is performed in the delay range
-        4.- A series is created in Pandas that stores the created arrays to later save them in a numpy array
-    """
-    # 1.- Extract necessary columns as separate numpy arrays
-    np_index = df[auroral_index].to_numpy()
-    
-    # 2.- Extract the omni_param columns and create sequences
-    df_omni = df[omni_param].copy()
-
-    sequences = []
-    # 3.- The columns are identified and a cycle is performed in the delay range
-    for i in range(len(df_omni) - shifty + 1):
-        # 4.- A series is created in Pandas that stores the created arrays to later save them in a numpy array
-        seq = df_omni.iloc[i:i + shifty].values
-        sequences.append(seq)
-
-    np_omni = np.array(sequences)
-    
-    # Align the auroral index data to match the delayed omni data
-    np_index = np_index[shifty - 1:]
+    else:
+        sequence = []
+        for i in range(len(df_omni) - shift_length + 1):
+            seq = df_omni.iloc[i : i + shift_length].values
+            sequence.append(seq)
         
+        np_omni = np.array(sequence)
+        np_index = np_index[shift_length-1:]
+    
     return np_omni, np_index
-
+        
 
 ###### [ DataTorch ] ######
 class CustomDataset(Dataset):
@@ -174,9 +140,10 @@ class CustomDataset(Dataset):
     """
     # 1.- Convert the numpy array to a torch tensor, convert it to float32 type and move it to cuda
     def __init__(self, omni, index, device):
+        self.device = device
+        
         self.x = torch.tensor(omni, dtype=torch.float32)
         self.y = torch.tensor(index, dtype=torch.float32).unsqueeze(1)
-        self.device = device
         self.x = self.x.to(self.device)
         self.y = self.y.to(self.device)
 
@@ -185,5 +152,7 @@ class CustomDataset(Dataset):
         return len(self.x)
     
     # 3.- A function is made that delivers the values ??of a given index
-    def __getitem__(self, idx):
-        return self.x[idx], self.y[idx]
+    def __getitem__(self, index):
+        x = self.x[index]
+        y = self.y[index]
+        return x, y
