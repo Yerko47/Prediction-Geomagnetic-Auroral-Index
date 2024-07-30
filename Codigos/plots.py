@@ -1,42 +1,41 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 
 ###### [ Time serie Plot ] ######
-def time_plot(df, in_year, out_year, auroral_param, plot_file):
+def time_serie_plot(df, in_year, out_year, omni_param, auroral_param, plot_file):
+    df_epoch = df['Epoch']
     df.index = df['Epoch']
-    auroral_subplot_count = len(auroral_param)
-    omni_subplot_count = df.shape[1] - auroral_subplot_count-1
+    omni_len = len(omni_param)
+    auroral_len = len(auroral_param)
 
-    ### Fig and axs OMNI Parameters plot
-    fig1, ax1 = plt.subplots(omni_subplot_count, 1, figsize=(20,25), sharex=True)
-    fig1.suptitle(f'OMNI Parameters from {in_year} to {out_year}', y=0.9, fontsize= 20)
+    fig1, axs1 = plt.subplots(omni_len, 1, figsize=(20, 25), sharex=True)
+    fig2, axs2 = plt.subplots(auroral_len, 1, figsize=(20, 13), sharex=True)
+    fig1.suptitle(f'OMNI Parameters from {in_year} to {out_year}', y=0.9, fontsize=20)
+    fig2.suptitle(f'Auroral Index from {in_year} to {out_year}', y=0.95, fontsize=20)
 
-    ### Fig and axs Auroral Index plot
-    fig2, ax2 = plt.subplots(auroral_subplot_count, 1, figsize=(20,13), sharex=True)
-    fig2.suptitle(f'Auroral Index from {in_year} to {out_year}', y=0.95, fontsize= 20)
+    if omni_len == 1:
+        axs1 = [axs1]
+    if auroral_len == 1:
+        axs2 = [axs2]
 
-    i, j = 0, 0
+    for i, param in enumerate(omni_param):
+        axs1[i].plot(df[param], color='teal', zorder=1)
+        axs1[i].axhline(0, color='red', zorder=2, linewidth=3)
+        axs1[i].set_ylabel(f'{param}', labelpad=17)
+        axs1[i].set_xlim([min(df_epoch) - pd.Timedelta('100d'), max(df_epoch) + pd.Timedelta('100d')])
+        axs1[i].grid(True)
 
-    for cols in df.columns:
-        # OMNI Parameters plot
-        if cols not in auroral_param and cols != 'Epoch':
-            ax1[i].plot(df[cols], color='teal')
-            ax1[i].set_ylabel(f'{cols}', labelpad=15)
-            ax1[i].axhline(y=0, color='red', linestyle='dashed')
-            ax1[i].grid(True)
-            i += 1
+    for i, param in enumerate(auroral_param):
+        axs2[i].plot(df[param], color='teal', zorder=1)
+        axs2[i].axhline(0, color='red', zorder=2, linewidth=3)
+        axs2[i].set_ylabel(f'{param}', labelpad=17)
+        axs2[i].set_xlim([min(df_epoch) - pd.Timedelta('100d'), max(df_epoch) + pd.Timedelta('100d')])
+        axs2[i].grid(True)
 
-        # Auroral Index plot
-        if cols in auroral_param and cols != 'Epoch':
-            ax2[j].plot(df[cols], color='teal')
-            ax2[j].set_ylabel(f'{cols}', labelpad=15)
-            ax2[j].axhline(y=0, color='red', linestyle='dashed')
-            ax2[j].grid(True)
-            j += 1            
-
-    ax1[-1].set_xlabel('Date', fontsize=16)
-    ax2[-1].set_xlabel('Date', fontsize=16)
+    axs1[-1].set_xlabel('Date', fontsize=16)
+    axs2[-1].set_xlabel('Date', fontsize=16)
 
     fig1.savefig(f'{plot_file}Omni_Parameters_{in_year}_to_{out_year}.png')
     fig2.savefig(f'{plot_file}Auroral_electrojet_index_{in_year}_to_{out_year}.png')
@@ -47,11 +46,9 @@ def time_plot(df, in_year, out_year, auroral_param, plot_file):
 
 ###### [ Correlation Plot ] ######
 def corr_plot(df, correlation, plot_file):
-    # Calculate correlation 
     matrix = round(df.corr(method=correlation), 2)
 
-    ### Fig correlation plot
-    plt.figure(figsize=(15, 10))
+    plt.figure(figsize=(15,10))
     plt.title(f'Heat Map Correlation ({correlation.title()})', y=1.01, fontsize=15)
     plt.pcolor(matrix, cmap='RdBu', vmin=-1, vmax=1)
 
@@ -63,91 +60,70 @@ def corr_plot(df, correlation, plot_file):
                      verticalalignment='center',
                      fontsize=7,
                      color=color)
-
+            
     plt.colorbar()
-    plt.xticks(np.arange(0.5, len(matrix.columns), 1), matrix.columns, fontsize=8, rotation=35)
-    plt.yticks(np.arange(0.5, len(matrix.index), 1), matrix.index[::-1], fontsize=8)
+    plt.xticks(np.arange(0.5, len(matrix.columns), 1), matrix.columns, fontsize=10, rotation=35)
+    plt.yticks(np.arange(0.5, len(matrix.index), 1), matrix.index[::-1], fontsize=10)
     plt.savefig(plot_file + f'Heat_map_correlation_{correlation}.png')
     plt.close()
 
 
-###### [ Loss Plot ] ######
-def plot_loss(num_epoch, train_loss, val_loss, plot_file, type_model, auroral_index):
-    epochs = list(range(1,num_epoch+1))
+###### [ Plot Metric ] ######
+def plot_metric(metrics_train_val, save_plot_model, type_model, auroral_index):
+    metrics_list = ["Loss", "Accuracy", "R2", "RMSE"]
 
-    plt.figure(figsize=(15,10))
-    plt.title(f'Loss Plot {auroral_index.replace("_INDEX", " Index")} using {type_model}')
-
-    plt.plot(epochs, train_loss, color='teal', label='Train Loss')
-    plt.plot(epochs, val_loss, color='red', label='Valid Loss')
-    plt.xlabel('Epoch', fontsize=15)
-    plt.ylabel('Loss', fontsize=15)
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(plot_file + f'Loss_{type_model}_{auroral_index}_Epoch_{num_epoch}.png')
-    print('--- [ Loss Plot ] ---')
-    plt.close()
-
-
-###### [ Accuracy Plot ] ######
-def plot_acc(num_epoch, train_acc, val_acc, plot_file, type_model, auroral_index):
-    epochs = list(range(1,num_epoch+1))
-
-    plt.figure(figsize=(15,10))
-    plt.title(f'Accuracy Plot {auroral_index.replace("_INDEX", " Index")} using {type_model}')
-
-    plt.plot(epochs, train_acc, color='teal', label='Train Accuracy')
-    plt.plot(epochs, val_acc, color='red', label='Valid Accuracy')
-    plt.xlabel('Epoch', fontsize=10)
-    plt.ylabel('Accuracy', fontsize=10)
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(plot_file + f'Accuracy_{type_model}_{auroral_index}_Epoch_{num_epoch}.png')
-    print('--- [ Accuracy Plot ] ---')
-    plt.close()
-
-
-###### [ R2 Score Plot ] ######
-def plot_r2_score(num_epoch, train_r2, val_r2, plot_file, type_model, auroral_index):
-    epochs = list(range(1,num_epoch+1))
-
-    plt.figure(figsize=(15,10))
-    plt.title(f'R2 Score Plot {auroral_index.replace("_INDEX", " Index")} using {type_model}')
+    plt.figure(figsize=(15, 10))
     
-    plt.plot(epochs, train_r2, color='teal', label='Train Accuracy')
-    plt.plot(epochs, val_r2, color='red', label='Valid Accuracy')
-    plt.xlabel('Epoch', fontsize=10)
-    plt.ylabel('Accuracy', fontsize=10)
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(plot_file + f'R2_{type_model}_{auroral_index}_Epoch_{num_epoch}.png')
-    print('--- [ Accuracy Plot ] ---')
+    for metric in metrics_list:
+        i=0
+        while i <= len(metrics_list):
+            i = 500
+            plt.title(f'{metric} Plot {auroral_index.replace("_INDEX", " Index")} using {type_model}')
+        
+            for cols in metrics_train_val.columns:
+                if cols.endswith(metric):
+                    if cols.startswith("Train"):
+                        metric_value = metrics_train_val[cols].values
+                        plt.plot(metric_value, label=f'Train {metric}', color='teal')
+
+                    elif cols.startswith("Valid"):                       
+                        metric_value = metrics_train_val[cols].values
+                        plt.plot(metric_value, label=f'Valid {metric}', color='red')
+                        
+                    else:
+                        break
+
+            plt.xlabel('Epoch', fontsize=10)
+            plt.ylabel(f'{metric}', fontsize=10)
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            
+        plt.savefig(save_plot_model + f'Plot_{metric}_{type_model}_{auroral_index}_Epoch_{len(metrics_train_val)}.png')
+        print(f'--- [ Plot {metric} ] ---')
+        plt.clf()
     plt.close()
+            
+###### [ Scatter Test Real/Prediction ] ######
+def scatter_plot(df_real_pred, save_plot_model, type_model, auroral_index, metrics_test):
+    R2 = metrics_test['Test_R2'].values[0]
 
+    plt.figure(figsize=(10, 10))
+    plt.title(f'Scatter Plot {auroral_index.replace("_INDEX", " Index")} using {type_model}', fontsize=15)
 
-###### [ Density Plot ] ###### (Mejorar el gráfico)
-def density_plot(real, pred, plot_file, type_model, auroral_index, group):
+    plt.scatter(df_real_pred['Test_Real'], df_real_pred['Test_Pred'], c='teal', alpha=0.7, edgecolor='w', s=40)
+    plt.xscale('log')
+    plt.yscale('log')
+
+    p1 = max(df_real_pred['Test_Pred'].max(), df_real_pred['Test_Real'].max())
+    p2 = min(df_real_pred['Test_Pred'].min(), df_real_pred['Test_Real'].min())
+    plt.plot([p1, p2], [p1, p2], color='black', linewidth=2, label=f'R={np.sqrt(R2):.2f}')
     
-    norm = plt.Normalize(real.min(), real.max())
-    cmap = plt.cm.plasma
+    plt.xlabel('True Values', fontsize=15)
+    plt.ylabel('Predictions', fontsize=15)
+    plt.axis('equal')
+    plt.legend(loc='best')
 
-    plt.figure(figsize=(15,10))
-    plt.title(f'Density Plot {auroral_index.replace("_INDEX", " Index")} using {type_model}')
-
-    sc = plt.scatter(real, pred, c=real, cmap=cmap, norm=norm, alpha=0.6, edgecolors='k')
-
-    cbar = plt.colorbar(sc)
-    cbar.set_label('Density')
-
-    plt.plot([real.min(), real.max()], [real.min(), real.max()], color='red', linestyle='--', linewidth=2)
-    plt.xlabel('Real')
-    plt.ylabel('Prediction')
-    plt.grid(True)
-    plt.tight_layout()
-
-    plt.savefig(plot_file + f'Density Plot_{group}_{type_model}_{auroral_index}.png')
-    print('--- [ Density Plot ] ---')
+    plt.savefig(f'{save_plot_model}Plot_Scatter_{type_model}_{auroral_index}.png')
+    print('--- [ Plot Scatter ] ---')
     plt.close()
