@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 def save_model_info(in_year, out_year, auroral_index, omni_param, set_split, type_model, type_neural_network, scaler, shift_length, num_epoch,
                     train_len, val_len, test_len, batch_train, batch_val, batch_test, learning_rate, weight_decay, scheduler_option, patience, model, 
-                    criterion, optimizer, scheduler, metrics_train_val, metrics_test, lr_scheduler, today, total_time, save_info_model):
+                    criterion, optimizer, scheduler, metrics_train_val, metrics_test, lr_scheduler, today, total_time, df_real_pred, save_info_model):
 
     file = save_info_model + f'Information_model_{type_model}_{auroral_index}.txt'
     with open(file, "w") as f:
@@ -47,9 +47,6 @@ def save_model_info(in_year, out_year, auroral_index, omni_param, set_split, typ
             f.write(f'Learning Rate: {learning_rate}\n')
         f.write(f'Weight Decay: {weight_decay}\n')
         f.write('\n')
-            f.write(f'Learning Rate: {learning_rate}\n')
-        f.write(f'Weight Decay: {weight_decay}\n')
-        f.write('\n')
 
         f.write(f'------- [ Model ] -------\n') 
         f.write(f'{summary(model)}\n')
@@ -63,10 +60,14 @@ def save_model_info(in_year, out_year, auroral_index, omni_param, set_split, typ
         f.write(f'---------------------------------------------------\n')
 
         f.write(f'------- [ Metrics Training and Validation ] -------\n')
-        f.write(tabulate(metrics_train_val, headers='keys', tablefmt='grid'))
+        f.write(tabulate(metrics_train_val, headers='keys', tablefmt='simple'))
         f.write('\n')
 
         f.write(f'------- [ Metrics Test ] -------\n')
-        f.write(tabulate(metrics_test, headers='keys', tablefmt='grid'))
+        f.write(tabulate(metrics_test, headers='keys', tablefmt='simple'))
+        f.write('\n')
+        f.write('\n')
         f.write('\n')
 
+        f.write(f'------- [ Real vs/Pred ] -------\n')
+        f.write(tabulate(df_real_pred, headers='key', tablefmt='simple'))
