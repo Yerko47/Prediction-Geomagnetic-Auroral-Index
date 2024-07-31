@@ -1,4 +1,5 @@
 import torch
+import torchinfo
 import numpy as np
 import pandas as pd
 import torch.optim as optim
@@ -125,10 +126,8 @@ def train_model(model, criterion, optimizer, train_loader, val_loader, num_epoch
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            best_model_state = model.state_dict()
 
     ## [ Save ] ##
-    torch.save(best_model_state, save_result_model + f'Model_{type_model}_{auroral_index}_Best.pt')
     torch.save(model.state_dict(), save_result_model + f'Model_{type_model}_{auroral_index}_Epoch_{num_epoch}.pt')                   
 
     metrics_df = pd.DataFrame({
@@ -142,7 +141,6 @@ def train_model(model, criterion, optimizer, train_loader, val_loader, num_epoch
         'Valid_Accuracy': val_accuracy,
     })
 
-    metrics_df.to_csv(save_result_model + f'Metric_train_val_{type_model}_{auroral_index}.csv', index=False)
 
     learning_rate = pd.DataFrame(learning_rate)
     return model, metrics_df, learning_rate
@@ -200,7 +198,5 @@ def test_model(model, criterion, test_loader, save_result_model, type_model, aur
         'Test_Pred': all_pred.numpy().flatten().tolist()
     })
 
-    results_df.to_csv(save_result_model + f'Test_real_pred_{type_model}_{auroral_index}.csv', index=False)
-    metrics_df.to_csv(save_result_model + f'Metric_test_{type_model}_{auroral_index}.csv', index=False)
 
     return results_df, metrics_df
