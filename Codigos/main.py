@@ -1,4 +1,3 @@
-
 from read_cdf import *
 from variables import *
 from ANN_models import *
@@ -124,7 +123,7 @@ def main():
         ##### [ Save Info Model ] #####
         save_model_info(in_year, out_year, auroral_index, omni_param, set_split, type_model, type_neural_network, scaler, shift_length, num_epoch,
                     train_len, val_len, test_len, batch_train, batch_val, batch_test, learning_rate, weight_decay, scheduler_option, patience, model, 
-                    criterion, optimizer, scheduler, metrics_train_val, metrics_test, lr_scheduler, today, total_time, save_info_model)
+                    criterion, optimizer, scheduler, metrics_train_val, metrics_test, lr_scheduler, today, total_time, df_real_pred, save_info_model)
 
         ###### [ Plot Metrics ] ######
         plot_metric(metrics_train_val, save_plot_model, type_model, auroral_index)
