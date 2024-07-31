@@ -40,9 +40,13 @@ def save_model_info(in_year, out_year, auroral_index, omni_param, set_split, typ
         f.write(f'Optimizer: {optimizer.__class__.__name__}\n')
         if scheduler_option:
             f.write(f'Scheduler Option is {scheduler_option} and using {scheduler.__class__.__name__} and Patience {patience}\n')
-            lr_line = [f'Learning Rate: {lr}\n' for lr in lr_scheduler]
-            f.writelines(lr_line) 
+            f.write(f'Learning Rate:\n')
+            for lr in lr_scheduler:
+                f.write(f'  {lr}\n')
         else:
+            f.write(f'Learning Rate: {learning_rate}\n')
+        f.write(f'Weight Decay: {weight_decay}\n')
+        f.write('\n')
             f.write(f'Learning Rate: {learning_rate}\n')
         f.write(f'Weight Decay: {weight_decay}\n')
         f.write('\n')
