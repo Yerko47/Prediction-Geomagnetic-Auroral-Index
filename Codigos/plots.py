@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.stats import gaussian_kde
 
 ###### [ Time serie Plot ] ######
 def time_serie_plot(df, in_year, out_year, omni_param, auroral_param, plot_file):
@@ -70,7 +69,7 @@ def corr_plot(df, correlation, plot_file):
 
 ###### [ Plot Metric ] ######
 def plot_metric(metrics_train_val, save_plot_model, type_model, auroral_index):
-    metrics_list = ["Loss", "Accuracy", "R2", "RMSE"]
+    metrics_list = ["Loss", "R2", "RMSE"]
 
     plt.figure(figsize=(15, 10))
     
@@ -111,7 +110,7 @@ def scatter_plot(df_real_pred, save_plot_model, type_model, auroral_index, metri
     plt.figure(figsize=(10, 10))
     plt.title(f'Scatter Plot {auroral_index.replace("_INDEX", " Index")} using {type_model}', fontsize=15)
 
-    plt.scatter(df_real_pred['Test_Real'], df_real_pred['Test_Pred'], c='teal', alpha=0.7, edgecolor='w', s=40)
+    plt.scatter(df_real_pred['Test_Real'], df_real_pred['Test_Pred'], c='teal', alpha=0.7, edgecolor='w', s=100, marker='s')
     plt.xscale('log')
     plt.yscale('log')
 
