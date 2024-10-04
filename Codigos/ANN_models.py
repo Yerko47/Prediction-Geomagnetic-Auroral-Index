@@ -9,9 +9,9 @@ class ANN_1(nn.Module):
     def __init__(self, input_size, drop):
         super(ANN_1, self).__init__()
         self.fc_layers = nn.ModuleList([
-            nn.Linear(input_size,160),
-            nn.Linear(160,320),
+            nn.Linear(input_size,320),
             nn.Linear(320,160),
+            nn.Linear(160,160),
             nn.Linear(160,80),
             nn.Linear(80,20),
             nn.Linear(20,5),
@@ -26,8 +26,8 @@ class ANN_1(nn.Module):
         ])
 
         self.bn_layers = nn.ModuleList([
-            nn.BatchNorm1d(160),
             nn.BatchNorm1d(320),
+            nn.BatchNorm1d(160),
             nn.BatchNorm1d(160),
             nn.BatchNorm1d(80),
             nn.BatchNorm1d(20),
@@ -53,15 +53,13 @@ class ANN_2(nn.Module):
         self.fc_layers = nn.ModuleList([
             nn.Linear(input_size,320),
             nn.Linear(320,160),
-            nn.Linear(160,160),
-            nn.Linear(160,80),
-            nn.Linear(80,20),
-            nn.Linear(20,5),
+            nn.Linear(160,20),
+            nn.Linear(20,10),
+            nn.Linear(10,5),
             nn.Linear(5,1)
         ])        
 
         self.drop_layers = nn.ModuleList([
-            nn.Dropout(drop),
             nn.Dropout(drop),
             nn.Dropout(drop),
             nn.Dropout(drop),
@@ -71,9 +69,8 @@ class ANN_2(nn.Module):
         self.bn_layers = nn.ModuleList([
             nn.BatchNorm1d(320),
             nn.BatchNorm1d(160),
-            nn.BatchNorm1d(160),
-            nn.BatchNorm1d(80),
             nn.BatchNorm1d(20),
+            nn.BatchNorm1d(10),
             nn.BatchNorm1d(5),
         ])
 

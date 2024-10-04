@@ -4,11 +4,11 @@ from torchinfo import summary
 from tabulate import tabulate
 from datetime import datetime, timedelta
 
-def save_model_info(in_year, out_year, auroral_index, omni_param, set_split, type_model, type_neural_network, scaler, shift_length, num_epoch,
+def save_model_info(in_year, out_year, auroral_index, omni_param, set_split, type_model, type_neural_network, scaler, shift, num_epoch,
                     train_len, val_len, test_len, batch_train, batch_val, batch_test, learning_rate, weight_decay, scheduler_option, patience, model, 
                     criterion, optimizer, scheduler, metrics_train_val, metrics_test, lr_scheduler, today, total_time, df_real_pred, save_info_model):
 
-    file = save_info_model + f'Information_model_{type_model}_{auroral_index}.txt'
+    file = save_info_model + f'Information_model_{type_model}_{auroral_index}__Shift_{shift}.txt'
     with open(file, "w") as f:
         f.write(f'{auroral_index.replace("_", " ").upper()} Prediction ({in_year} to {out_year})\n')
         f.write(f'Date: {today}\n')
@@ -16,7 +16,7 @@ def save_model_info(in_year, out_year, auroral_index, omni_param, set_split, typ
         f.write(f'Model: {type_model}\n')
         f.write(f'Epoch: {num_epoch}\n')
         f.write(f'Scaler: {scaler.title()}\n')
-        f.write(f'Shift length: {shift_length}\n')
+        f.write(f'Shift length: {shift}\n')
         f.write('\n')
 
         f.write(f'------- [ Omni Parameters ] -------\n')

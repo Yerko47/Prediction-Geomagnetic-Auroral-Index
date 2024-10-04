@@ -1,144 +1,131 @@
+from plots import *
 from read_cdf import *
+from training import *
 from variables import *
-from ANN_models import *
-from LSTM_models import *
-from performance import *
-from save_info import *
-from Training import *
-from plots import time_serie_plot, corr_plot
-from plots import plot_metric, scatter_plot
+from data_function import *
+
 
 def main():
-
     today = datetime.now().strftime("%Y-%m-%d__%H:%M:%S")
-
-
-    ###### [ Device cuda ] ######
     device = ("cuda" if torch.cuda.is_available() else "cpu")
 
 
-    ## [ Save Model ] ##
-    save_plot_model = plot_file + f'{type_model}_{auroral_index}{today}/'
-    save_info_model = model_file + f'{type_model}_{auroral_index}{today}/'
-    save_result_model = result_file + f'{type_model}{auroral_index}_{today}/'
+    ##########################################################
+    ############# [      File and Folders      ] #############
 
+    model_file = result_file + f'Model_{type_model}_{auroral_index}_{today}/'
+    result_model_file = model_file + 'Result_model/'
+    plot_model_file = model_file + 'Plot_model/'
+    plot_metric_training_file = plot_model_file + 'training/metrics_train_plot/' #######
+    plot_shift_metric_training_file = plot_model_file + 'training/comparison_metrics_train_plot/'
+    plot_density_file = plot_model_file + 'test/density_plot/'
+    plot_shift_metric_test_file = plot_model_file + 'test/comparison_metrics_test_plot/'
+    plot_time_serie_test_file = plot_model_file + 'test/comparison_time_serie_test_plot/'
 
-    ##### [ Checks Folder ] ######
     check_folder(save_raw_file)
-    check_folder(processing_file)
-    check_folder(plot_file)
-    check_folder(model_file)
-    check_folder(result_file)        
-    check_folder(save_plot_model)
-    check_folder(save_info_model)
-    check_folder(save_result_model)
+    check_folder(stadistic_file)
+    check_folder(omni_serie_file)
+    check_folder(auroral_serie_file)
+    check_folder(result_model_file)
+    check_folder(plot_metric_training_file)
+    check_folder(plot_shift_metric_training_file)
+    check_folder(plot_density_file)
+    check_folder(plot_shift_metric_test_file)
+    check_folder(plot_time_serie_test_file)
 
 
-    ###### [ Dataset Building ] ######
-    dataset(in_year, out_year, omni_file, save_feather,processing_file, processOMNI)
+    #########################################################
+    ############## [      Read OMNI Set      ] ##############
+    dataset(in_year, out_year, omni_file, save_feather, save_raw_file, processOMNI)
 
-
-    ###### [ Dataset Building ] ######
-    dataset(in_year, out_year, omni_file, save_feather, processing_file, processOMNI)
-
-
-    ###### [ Read CDF ] ######
     if os.path.exists(save_feather):
         df = pd.read_feather(save_feather)
     else:
-        raise FileNotFoundError(f'The file {save_feather} doesnot  exist.')
+        raise FileNotFoundError(f'The file {save_feather} doesnot  exist')
     
 
-    ###### [ Plot ] ######
+    #########################################################
+    ############## [     Selection Data      ] ##############
+    df = epoch_storm(df, save_raw_file)
+
+
+    ###############################################################
+    ############## [     Time/Statistics Plot      ] ##############
     if processPLOT:
-        time_serie_plot(df, in_year, out_year, omni_param, auroral_param, plot_file)
-        corr_plot(df, correlation, plot_file)
+        time_serie_plot(df, omni_param, auroral_param, in_year, out_year, save_raw_file, omni_serie_file, auroral_serie_file)
+        corr_plot(df, correlation, stadistic_file)
 
 
-    ###### [ Epoch Storm Selection ] #####
-    df = epoch_storm(df, processing_file)
-
-
-    ###### [ Scaler ] ######
+    ##################################################################
+    ############## [     Scaler Solar Parameters      ] ##############
     df = scaler_df(df, scaler, omni_param, auroral_param)
 
 
-    ###### [ Percentage Set ] ######
-    df_train, df_val, df_test = create_set_prediction(df,set_split,    n_split_train_val_test, n_split_train_val,test_size, val_size)
-    train_len = round(len(df_train) / len(df), 2) * 100
-    val_len = round(len(df_val) / len(df), 2) * 100
-    test_len = round(len(df_test) / len(df), 2) * 100
+    #######################################################
+    ############## [     Divition Set      ] ##############
+    train_df, val_df, test_df = create_set_prediction(df, set_split, test_size, val_size)
 
-    print('\n---------- [ Percentage Set ] ----------\n')
-    print(f'Percentage Train Set: {train_len}%')
-    print(f'Percentage Valid Set: {val_len}%')
-    print(f'Percentage Test Set: {test_len}%\n')
+    shift_set = []
+    test_real_pred = pd.DataFrame()
 
+    for shift in shift_length:
+        create_shift_folder(plot_metric_training_file, shift)
+        create_shift_folder(plot_shift_metric_training_file, shift)
+        create_shift_folder(plot_time_serie_test_file, shift)
 
-    ###### [ Shift or Delay ] ######
-    omni_train, index_train, df_epoch_train = shifty(df_train, omni_param, auroral_index, shift_length, type_model)
-    omni_val, index_val, df_epoch_val = shifty(df_val, omni_param,auroral_index,     shift_length, type_model)
-    omni_test, index_test, df_epoch_test = shifty(df_test, omni_param,    auroral_index, shift_length, type_model)
+        shift_set.append(shift)
 
-    print('\n---------- [ Dimension Set ] ----------\n')
-    print(f'Dimension Train Set: OMNI--> {omni_train.shape}  |      {auroral_index.replace("_INDEX", " Index")}-->{index_train.shape}  ')
-    print(f'Dimension Valid Set: OMNI--> {omni_val.shape}  |   {auroral_index.replace("_INDEX", " Index")}--> {index_val.shape}')
-    print(f'Dimension Test Set: OMNI--> {omni_test.shape}  |   {auroral_index.replace("_INDEX", " Index")}--> {index_test.shape} \n')
+        
+        ####################################################
+        ############## [     Shift Set      ] ##############
+        print(f'\n---------- [ Shifty Set: {shift} ] ----------\n')
+        omni_train, index_train = shifty(train_df, omni_param, auroral_index, shift, type_model, 'train')
+        omni_val, index_val = shifty(val_df, omni_param,auroral_index, shift, type_model, 'val')
+        omni_test, index_test, df_epoch_test = shifty(test_df, omni_param, auroral_index, shift, type_model, 'test')
 
+        len_test = len(df) - len(index_test)
+        ###################################################################
+        ############## [     Torch Set and DataLoader      ] ##############
+        train_torch = CustomDataset(omni_train, index_train, device)
+        val_torch = CustomDataset(omni_val, index_val, device)
+        test_torch = CustomDataset(omni_test, index_test, device)
 
-    ###### [ DataTorch and DataLoader ] ######
-    train_torch = CustomDataset(omni_train, index_train, device)
-    val_torch = CustomDataset(omni_val, index_val, device)
-    test_torch = CustomDataset(omni_test, index_test, device)
-    train_loader = DataLoader(train_torch, shuffle=True,   batch_size=batch_train)
-    val_loader = DataLoader(val_torch, shuffle=False,  batch_size=batch_val)
-    test_loader = DataLoader(test_torch, shuffle=False,    batch_size=batch_test)
-    
-
-    ###### [ Neural Network Model ] ######
-    model = type_nn(type_model, type_neural_network, omni_train,drop, num_layer, device)
-    print()
-    print(f'----- [ {type_model} Neural Network Model ] -----\n')
-    summary(model)
-    print()
-
-    
-    ###### [ HyperParameters ] ######
-    criterion = nn.MSELoss()
-
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)#,weight_decay=weight_decay)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,'min', patience=patience, verbose=False)
-    #scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer,num_epoch * len(test_loader), verbose=False)
-
-    start_time = time.time()
+        train_loader = DataLoader(train_torch, shuffle=True, batch_size=batch_train)
+        val_loader = DataLoader(val_torch, shuffle=False, batch_size=batch_val)
+        test_loader = DataLoader(test_torch, shuffle=False, batch_size=batch_test)
 
 
-    ###### [ Training/Validation Model ] ######
-    model, metrics_train_val, lr_scheduler = train_model(model,criterion, optimizer, train_loader, val_loader, num_epoch,save_result_model, type_model, auroral_index, scheduler,scheduler_option)
+        ####################################################################
+        ############## [     Model and Hyperparameters      ] ##############
+        model = type_nn(type_model, type_neural_network, omni_train,drop, num_layer, device)
+
+        criterion = nn.MSELoss()
+        optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,'min', patience=scheduler_patience, verbose=False)
+        
+        print(f'---------   [ {type_model} Neural Network and Shifty {shift} ]   ---------')
+        start_time = time.time()
+
+        ####################################################################
+        ############## [     Training Model Prediction      ] ##############
+        model, metrics_train_val, learning_rate_df, best_val_loss = train_model(model, criterion, optimizer, train_loader, val_loader, num_epoch, shift, type_model, auroral_index, scheduler, scheduler_option, result_model_file)
+        results_df, metrics_test = test_model(model, criterion, test_loader, result_model_file, type_model, auroral_index, num_epoch, df_epoch_test, shift)
 
 
-    ###### [ Test Model ] ######
-    df_real_pred, metrics_test = test_model(model, criterion,test_loader, save_result_model, type_model, auroral_index,num_epoch, df_epoch_test)
+        end_time = time.time()
+        total_time = str(timedelta(seconds=(end_time - start_time)))
 
-    end_time = time.time()
-    total_time = str(timedelta(seconds=(end_time - start_time)))
-
-
-    ##### [ Save Info Model ] #####
-    save_model_info(in_year, out_year, auroral_index, omni_param,set_split, type_model, type_neural_network, scaler,shift_length, num_epoch,
-                train_len, val_len, test_len, batch_train,batch_val, batch_test, learning_rate,weight_decay, scheduler_option, patience, model, 
-                criterion, optimizer, scheduler,metrics_train_val, metrics_test, lr_scheduler,today, total_time, df_real_pred, save_info_model)
-    
-
-    ###### [ Plot Metrics ] ######
-    plot_metric(metrics_train_val, save_plot_model, type_model,auroral_index)
-
-    ##### [ Scatter Plot ] #####
-    scatter_plot(df_real_pred, save_plot_model, type_model,auroral_index, metrics_test)
+        test_real_pred = pd.concat([test_real_pred, metrics_test], axis=0, ignore_index=True)
+        ######################################################
+        ############## [     Plot Model       ] ##############
+        plot_compared_test_metrics(test_real_pred, shift_set, plot_shift_metric_test_file, auroral_index, type_model)
+        plot_time_model(results_df, save_raw_file, plot_time_serie_test_file, auroral_index, shift, len_test)     
+        density_plot(results_df, plot_density_file, metrics_test, auroral_index, type_model, shift)
+        plot_metric(metrics_train_val, plot_metric_training_file, shift, auroral_index, type_model)
 
 
-    print('You have finished your path, you are a machine')
 
+        del model, metrics_train_val, results_df
 
 if __name__ == '__main__':
     main()
