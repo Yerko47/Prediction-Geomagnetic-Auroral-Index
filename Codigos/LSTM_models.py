@@ -4,6 +4,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 
+####### [ LSTM 1 ] #######
 class LSTM_1(nn.Module):
     def __init__(self, input_size, drop, num_layer, device):
         super(LSTM_1, self).__init__()
@@ -14,12 +15,13 @@ class LSTM_1(nn.Module):
         self.lstm = nn.LSTM(input_size, self.hidden_size, self.num_layer, batch_first=True, dropout=drop)
         
         self.fc_layers = nn.ModuleList([
-            nn.Linear(self.hidden_size, 80),
-            nn.Linear(80,40),
-            nn.Linear(40,20),
+            nn.Linear(self.hidden_size, 160),
+            nn.Linear(160,160),
+            nn.Linear(160,80),
+            nn.Linear(80,20),
             nn.Linear(20,5),
             nn.Linear(5,1)
-        ])  
+        ])   
 
         self.activation = nn.ReLU()
 
@@ -41,6 +43,7 @@ class LSTM_1(nn.Module):
         return out
 
 
+####### [ LSTM 2 ] #######
 class LSTM_2(nn.Module):
     def __init__(self, input_size, drop, num_layer):
         super(LSTM_2, self).__init__()

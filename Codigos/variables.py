@@ -21,8 +21,8 @@ omni_param = ['B_Total',
               ]
 
 auroral_param = ['AE_INDEX', 
-                 'AL_INDEX', 
-                 'AU_INDEX'] 
+                 'AU_INDEX', 
+                 'AL_INDEX'] 
 
 
 ###### [ Split Train/Val/Test Set  ] ######
@@ -44,7 +44,7 @@ batch_val = 1040*2
 batch_test = 520*2
 
 ## [ Hyperparameters ] ##
-num_epoch = 500
+num_epoch = 100
 learning_rate = 1e-3
 weight_decay = 1e-2
 patience = 20
@@ -54,7 +54,7 @@ scheduler_option = False
 scheduler_patience = 100
 
 # [ LSTM ] #
-num_layer = 3
+num_layer = 4
 
 
 ###### [ Plots and correlation ] ######
@@ -73,17 +73,3 @@ result_file = desktop_file + f'result/'
 
 save_raw_file = result_file + f'raw_data/'
 save_feather = save_raw_file + f'omni_data_{in_year}_to_{out_year}.feather'
-
-general_plot_file = result_file + 'general_plot/'
-stadistic_file = general_plot_file + 'stadistic/'
-time_serie_file = general_plot_file + 'plot_time_serie/'
-omni_serie_file = time_serie_file + 'omni_serie/'
-auroral_serie_file = time_serie_file + 'auroral_serie/'
-
-
-
-
-
-
-
-

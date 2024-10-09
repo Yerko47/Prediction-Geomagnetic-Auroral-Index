@@ -1,4 +1,5 @@
 import time 
+import os
 from datetime import timedelta
 import numpy as np
 import pandas as pd
@@ -11,7 +12,14 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import RobustScaler, StandardScaler, MinMaxScaler
 from sklearn.model_selection import train_test_split
 
-###### [ Epoch Storm Selection ] #####
+
+####### [ Check Folder ] #######
+def check_folder(file):
+    if not os.path.exists(file):
+        os.makedirs(file)
+
+
+####### [ Epoch Storm Selection ] #######
 def epoch_storm(df, save_raw_file):
     """
     This function filters data based on a list of storm events and selects a time window of 48 hours around each storm for further analysis.
@@ -54,7 +62,7 @@ def epoch_storm(df, save_raw_file):
     return df_storm.reset_index()
 
 
-###### [ Scaler ] ######
+####### [ Scaler Data ] #######
 def scaler_df(df, scaler, omni_param, auroral_param):
     """
     This function applies a specified scaling method to the OMNI parameters in the DataFrame.
@@ -85,7 +93,7 @@ def scaler_df(df, scaler, omni_param, auroral_param):
             A new DataFrame with the scaled OMNI parameters, 'Epoch', and auroral parameters.
     """
     df_omni = df[omni_param]
-    df_epoch = df['Epoch']
+    df_epoch = df[['Epoch']]
     df_auroral = df[auroral_param]
 
     if scaler == 'robust': 
@@ -98,14 +106,14 @@ def scaler_df(df, scaler, omni_param, auroral_param):
         raise ValueError('Scaler must be "robust", "standard" or "minmax" ')
 
     df_omni_scaled = scaler.fit_transform(df_omni)
-    df_omni_scaled = pd.DataFrame(df_omni_scaled, columns=omni_param, index=df.index)
+    df_omni_scaled = pd.DataFrame(df_omni_scaled, columns=omni_param, index=df_omni.index)
 
     df = pd.concat([df_epoch, df_omni_scaled, df_auroral], axis=1)
 
     return df
 
 
-###### [ Create set prediction ] ######
+####### [ Create set prediction ] #######
 def create_set_prediction(df, set_split, test_size, val_size):
     """
     This function creates the Train/Val/Test set for the prediction.
@@ -115,7 +123,6 @@ def create_set_prediction(df, set_split, test_size, val_size):
             n = len(df)
             test_index = int(n * (1 - test_size))
             val_index = int(test_index * (1 - val_size))
-
             train_df = df[:val_index].copy()
             val_df = df[val_index:test_index].copy()
             test_df = df[test_index:].copy()
@@ -142,9 +149,9 @@ def create_set_prediction(df, set_split, test_size, val_size):
 
     
     return train_df, val_df, test_df
-            
 
-###### [ Shift ] ######
+
+####### [ Shift ] #######
 def shifty(df, omni_param, auroral_index, shift_length, type_model, group):
     """
     This code creates a data delay for the neural networks. If it is an ANN it will be [m, n-t]. If it is a recurrent network it will be [m, [t,n]]
@@ -181,8 +188,8 @@ def shifty(df, omni_param, auroral_index, shift_length, type_model, group):
     else:
         return np_omni, np_index
 
-            
-###### [ DataTorch ] ######
+
+####### [ DataTorch ] #######
 class CustomDataset(Dataset):
     def __init__(self, omni, index, device):
         self.device = device
@@ -197,3 +204,4 @@ class CustomDataset(Dataset):
         x = self.x[index]
         y = self.y[index]
         return x, y            
+

@@ -154,14 +154,3 @@ Returns:
     else:
         print(f' The file already exists in {save_feather}')
 
-
-####### [ Check Folder ] #######
-def check_folder(file):
-    if not os.path.exists(file):
-        os.makedirs(file)
-
-
-####### [ Check Shift Folder ] #######
-def create_shift_folder(file, shift):
-    if not os.path.exists(file + f'{shift}'):
-        check_folder(file + f'{shift}')
